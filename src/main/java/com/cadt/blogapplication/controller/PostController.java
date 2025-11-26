@@ -1,6 +1,7 @@
 package com.cadt.blogapplication.controller;
 
 import com.cadt.blogapplication.entity.Post;
+import com.cadt.blogapplication.payload.PostDto;
 import com.cadt.blogapplication.service.PostService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,12 +22,10 @@ public class PostController {
     // 1. Post API: Create a Post API
     // URL: POST http://localhost:8080/api/posts
     @PostMapping
-    public ResponseEntity<Post> createPost(
-            @RequestBody Post post
+    public ResponseEntity<PostDto> createPost(
+            @RequestBody PostDto postDto
     ) {
-        Post savedPost = postService.createPost(post);
-        // Return 201 CREATED status instead of just 200 OK
-        return new ResponseEntity<>(savedPost, HttpStatus.CREATED);
+        return new ResponseEntity<>(postService.createPost(postDto), HttpStatus.CREATED);
     }
 
     // 2. GET API: Get all posts
@@ -68,6 +67,7 @@ public class PostController {
 
     // 5. PUT API: Update an existing post
     // URL: PUT http://localhost:8080/api/posts/1
+    @PutMapping("/{id}")
     public ResponseEntity<Post> updatePost(
             @PathVariable Long id, @RequestBody Post postDetails
     ) {

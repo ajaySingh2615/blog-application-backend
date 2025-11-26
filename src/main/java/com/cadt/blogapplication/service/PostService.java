@@ -1,6 +1,7 @@
 package com.cadt.blogapplication.service;
 
 import com.cadt.blogapplication.entity.Post;
+import com.cadt.blogapplication.payload.PostDto;
 import com.cadt.blogapplication.repository.PostRepository;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +18,18 @@ public class PostService {
     }
 
     // Feature 1: Create a new Post
-    public Post createPost(Post post) {
-        // Business logic: Set the time automatically before saving
+    public PostDto createPost(PostDto postDto) {
+        // 1. Convert DTO to Entity
+        Post post = mapToEntity(postDto);
+
+        // 2. Business Logic (Time)
         post.setCreatedAt(LocalDateTime.now());
 
-        // call the repository to save to DB
-        return postRepository.save(post);
+        // 3. Save Entity to DB
+        Post newPost = postRepository.save(post);
+
+        // 4. Convert Entity back to DTO for response
+        return mapToDTO(newPost);
     }
 
     // Feature 2: Get all Posts
@@ -63,5 +70,22 @@ public class PostService {
         return null;  // Or throw exception
     }
 
+    // Convert Entity to DTO
+    private PostDto mapToDTO(Post post) {
+        PostDto postDto = new PostDto();
+        postDto.setId(post.getId());
+        postDto.setTitle(post.getTitle());
+        postDto.setContent(post.getContent());
+        postDto.setAuthor(post.getAuthor());
+        return postDto;
+    }
 
+    // Convert DTO to Entity
+    private Post mapToEntity(PostDto postDto) {
+        Post post = new Post();
+        post.setTitle(postDto.getTitle());
+        post.setContent(postDto.getContent());
+        post.setAuthor(postDto.getAuthor());
+        return post;
+    }
 }
