@@ -1,8 +1,14 @@
 package com.cadt.blogapplication.service;
 
 import com.cadt.blogapplication.entity.Post;
+import com.cadt.blogapplication.exception.ResourceNotFoundException;
 import com.cadt.blogapplication.payload.PostDto;
+import com.cadt.blogapplication.payload.PostResponse;
 import com.cadt.blogapplication.repository.PostRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,41 +39,63 @@ public class PostService {
     }
 
     // Feature 2: Get all Posts
-    public List<Post> getAllPosts() {
-        return postRepository.findAll();
+    public PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir) {
+        // 1. Create Sort object (Senior Logic: Handle Ascending/Descending)
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        // 2. Create Pageable instance
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        // 3. Get the Page from DB (Not a List, but a 'Page')
+        Page<Post> postsPage = postRepository.findAll(pageable);
+
+        // 4. Get the content (List of entities) from the Page
+        List<Post> listOfPosts = postsPage.getContent();
+
+        // Convert Entities to DTOs
+        List<PostDto> content = listOfPosts.stream().map(this::mapToDTO).toList();
+
+        // Create the response object and fill it
+        PostResponse postResponse = new PostResponse();
+        postResponse.setContent(content);
+        postResponse.setPageNo(postsPage.getNumber());
+        postResponse.setPageSize(postsPage.getSize());
+        postResponse.setTotalElements(postsPage.getTotalElements()); // Crucial for frontend
+        postResponse.setTotalPages(postsPage.getTotalPages());
+        postResponse.setLast(postsPage.isLast()); // Should I disable the next button?
+        return postResponse;
     }
 
     // Feature 3: Get a single post by ID
-    public Post getPostById(Long id) {
-        return postRepository.findById(id).orElse(null);
+    public PostDto getPostById(Long id) {
+        Post post = postRepository.findById(id)
+                // If found, good. If not, THROW exception.
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
+        return mapToDTO(post);
     }
 
     // Feature 4: Delete a post
     public void deletePost(Long id) {
-        // Check if it exists before trying to delete (Good practice)
-        if (postRepository.existsById(id)) {
-            postRepository.deleteById(id);
-        } else {
-            // In a real app, we would throw a custom exception here
-            throw new RuntimeException("Post not found with id: " + id);
-        }
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("post", "id", id));
+
+        postRepository.delete(post);
     }
 
     // Feature 5: Update a post
-    public Post updatePost(Long id, Post postDetails) {
+    public PostDto updatePost(Long id, PostDto postDto) {
         // 1. Find the existing post
-        Post existingPost = postRepository.findById(id).orElse(null);
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
 
-        if (existingPost != null) {
-            // 2. Update the fields with new data
-            existingPost.setTitle(postDetails.getTitle());
-            existingPost.setContent(postDetails.getContent());
+        post.setTitle(postDto.getTitle());
+        post.setContent(postDto.getContent());
 
-            // 3. Save it back to the DB
-            // JPA is smart: If ID exists, it does UPDATE. If ID is null, it does INSERT.
-            return postRepository.save(existingPost);
-        }
-        return null;  // Or throw exception
+        Post updatedPost = postRepository.save(post);
+
+        return mapToDTO(updatedPost);
     }
 
     // Convert Entity to DTO
