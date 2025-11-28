@@ -1,17 +1,14 @@
 package com.cadt.blogapplication.controller;
 
-import com.cadt.blogapplication.entity.Post;
 import com.cadt.blogapplication.payload.PostDto;
 import com.cadt.blogapplication.payload.PostResponse;
 import com.cadt.blogapplication.service.PostService;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController // @Controller and @ResponseBody
 @RequestMapping("/api/posts")
 public class PostController {
