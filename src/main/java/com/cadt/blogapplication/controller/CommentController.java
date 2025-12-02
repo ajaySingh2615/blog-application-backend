@@ -33,6 +33,7 @@ public class CommentController {
 
     // 2. Get Comments API
     // GET http://localhost:8080/api/posts/1/comments
+    @GetMapping("/posts/{postId}/comments")
     public List<CommentDto> getCommentByPostId(@PathVariable(value = "postId") Long postId) {
         return commentService.getCommentsByPostId(postId);
     }
