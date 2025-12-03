@@ -6,6 +6,7 @@ import com.cadt.blogapplication.payload.LoginDto;
 import com.cadt.blogapplication.payload.RegisterDto;
 import com.cadt.blogapplication.repository.RoleRepository;
 import com.cadt.blogapplication.repository.UserRepository;
+import com.cadt.blogapplication.security.JwtTokenProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,27 +29,29 @@ public class AuthController {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     // We inject the Manager here! (This works because of the @Bean you just asked about)
-    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     // REGISTER API
     // POST /api/auth/register
     @PostMapping("/register")
-    public ResponseEntity<String > register(@RequestBody RegisterDto registerDto){
+    public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
 
         // 1. check if username exists
-        if(userRepository.existsByUsername(registerDto.getUsername())){
+        if (userRepository.existsByUsername(registerDto.getUsername())) {
             return new ResponseEntity<>("Username is already taken!", HttpStatus.BAD_REQUEST);
         }
 
         // 2. Check if email exists
-        if(userRepository.existsByEmail(registerDto.getEmail())){
+        if (userRepository.existsByEmail(registerDto.getEmail())) {
             return new ResponseEntity<>("Email is already taken!", HttpStatus.BAD_REQUEST);
         }
 
@@ -90,7 +93,10 @@ public class AuthController {
         // If successfully, store the authenticated user in the Security Context (Memory)
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        return new ResponseEntity<>("User Logged-in successfully!.", HttpStatus.OK);
+        // Generate token
+        String token = jwtTokenProvider.generateToken(authentication);
+
+        return new ResponseEntity<>(token, HttpStatus.OK);
     }
 
 
