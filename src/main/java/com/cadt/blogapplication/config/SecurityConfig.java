@@ -1,5 +1,6 @@
 package com.cadt.blogapplication.config;
 
+import com.cadt.blogapplication.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,15 +14,18 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableMethodSecurity // Allows @PreAuthorize annotations
 public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(UserDetailsService userDetailsService) {
+    public SecurityConfig(UserDetailsService userDetailsService, JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.userDetailsService = userDetailsService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     // 1. Password Encoder (BCrypt)
@@ -47,6 +51,10 @@ public class SecurityConfig {
                                 .requestMatchers("/api/auth/**").permitAll() // Allow Login/Register to everyone
                                 .anyRequest().authenticated() // Lock everything else
                 ).httpBasic(Customizer.withDefaults()); // Use Basic Auth for now (We will swap to JWT later)
+
+        // INSTALL THE LOCK HERE
+        // "Run my JWT Filter BEFORE the standard Username/Password Filter"
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
