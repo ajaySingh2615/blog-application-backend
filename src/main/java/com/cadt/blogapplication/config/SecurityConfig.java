@@ -43,7 +43,6 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable) // Disable CSRF for REST APIs
                 .authorizeHttpRequests((authorize) ->
                         // authorize.anyRequest().authenticated() // (Lock everything - old way)
-
                         authorize.requestMatchers(HttpMethod.GET, "/api/**").permitAll() // Allow GET to everyone
                                 .requestMatchers("/api/auth/**").permitAll() // Allow Login/Register to everyone
                                 .anyRequest().authenticated() // Lock everything else
